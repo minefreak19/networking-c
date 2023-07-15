@@ -1,0 +1,6 @@
+GET / HTTP/1.1
+Accept: text/html
+Host: www.google.com
+Port: 20480
+Connection: close
+
