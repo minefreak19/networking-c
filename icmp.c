@@ -20,60 +20,60 @@
 #include "common.h"
 
 void ping_icmp(int sockfd, const char *hostname) {
-    struct addrinfo hint = {0};
-    struct addrinfo *ai = NULL;
+  struct addrinfo hint = {0};
+  struct addrinfo *ai = NULL;
 
-    hint.ai_family = AF_INET;
-    hint.ai_socktype = SOCK_RAW;
-    hint.ai_flags = AI_CANONNAME;
+  hint.ai_family = AF_INET;
+  hint.ai_socktype = SOCK_RAW;
+  hint.ai_flags = AI_CANONNAME;
 
-    printf("Getting addrinfo for %s...\n", hostname);
-    if ((errno = getaddrinfo(hostname, NULL, &hint, &ai)) != 0) {
-        fprintf(stderr, "ERROR: Could not get addrinfo for hostname %s: %s\n",
-                hostname, gai_strerror(errno));
-        exit(1);
-    }
-    display_addrinfo_all(ai);
+  printf("Getting addrinfo for %s...\n", hostname);
+  if ((errno = getaddrinfo(hostname, NULL, &hint, &ai)) != 0) {
+    fprintf(stderr, "ERROR: Could not get addrinfo for hostname %s: %s\n",
+            hostname, gai_strerror(errno));
+    exit(1);
+  }
+  display_addrinfo_all(ai);
 
-    struct icmp_pack msg = make_icmp_echo_pack();
-    dump_bytes(stdout, &msg, sizeof(msg));
+  struct icmp_pack msg = make_icmp_echo_pack();
+  dump_bytes(stdout, &msg, sizeof(msg));
 
-    printf("Sending echo packet...\n");
-    if (sendto(sockfd, &msg, sizeof(msg), 0, ai->ai_addr, ai->ai_addrlen) < 0) {
-        fprintf(stderr, "ERROR: Could not send echo packet to %s: %s\n",
-                hostname, strerror(errno));
-        exit(1);
-    }
-    printf("Sent successfully.\n");
+  printf("Sending echo packet...\n");
+  if (sendto(sockfd, &msg, sizeof(msg), 0, ai->ai_addr, ai->ai_addrlen) < 0) {
+    fprintf(stderr, "ERROR: Could not send echo packet to %s: %s\n", hostname,
+            strerror(errno));
+    exit(1);
+  }
+  printf("Sent successfully.\n");
 
-    printf("Reading response...\n");
-    if (recvfrom(sockfd, &msg, sizeof(msg), 0, ai->ai_addr, &ai->ai_addrlen) <
-        0) {
-        fprintf(stderr, "ERROR: Could not receive response from %s: %s\n",
-                hostname, strerror(errno));
-        exit(1);
-    }
-    printf("Received response with type %d.\n", msg.hdr.type);
-    dump_bytes(stdout, &msg, sizeof(msg));
+  printf("Reading response...\n");
+  if (recvfrom(sockfd, &msg, sizeof(msg), 0, ai->ai_addr, &ai->ai_addrlen) <
+      0) {
+    fprintf(stderr, "ERROR: Could not receive response from %s: %s\n", hostname,
+            strerror(errno));
+    exit(1);
+  }
+  printf("Received response with type %d.\n", msg.hdr.type);
+  dump_bytes(stdout, &msg, sizeof(msg));
 
-    freeaddrinfo(ai);
+  freeaddrinfo(ai);
 }
 
 int main(void) {
-    const char *hostname = "www.google.com";
+  const char *hostname = "www.google.com";
 
-    printf("Creating socket...\n");
-    int sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
-    if (sockfd < 0) {
-        fprintf(stderr, "ERROR: Could not open socket: %s\n", strerror(errno));
-        exit(1);
-    }
-    printf("Created socket successfully.\n");
+  printf("Creating socket...\n");
+  int sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
+  if (sockfd < 0) {
+    fprintf(stderr, "ERROR: Could not open socket: %s\n", strerror(errno));
+    exit(1);
+  }
+  printf("Created socket successfully.\n");
 
-    ping_icmp(sockfd, hostname);
+  ping_icmp(sockfd, hostname);
 
-    printf("Closing socket...\n");
-    close(sockfd);
-    printf("Closed socket successfully.\n");
-    return 0;
+  printf("Closing socket...\n");
+  close(sockfd);
+  printf("Closed socket successfully.\n");
+  return 0;
 }

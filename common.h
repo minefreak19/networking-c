@@ -137,11 +137,29 @@ static inline struct icmp_pack make_icmp_echo_pack(void) {
            sizeof(struct icmp_pack));
     struct icmp_pack ret = {0};
     ret.hdr.type = ICMP_ECHO;
-    ret.hdr.un.echo.id = htons(getpid());
-    ret.hdr.un.echo.sequence = htons(0xCAFE);
+    /* ret.hdr.un.echo.id = htons(getpid()); */
+    ret.hdr.un.echo.id = 0;
+    ret.hdr.un.echo.sequence = htons(0x5AFE);
     for (size_t i = 0; i < sizeof(ret.data); i++) {
         ret.data[i] = 32 + i;
     }
     ret.hdr.checksum = checksum(&ret, sizeof(ret));
     return ret;
+}
+
+static inline uint16_t sum_u16(const void *ptr, size_t bytes) {
+    assert(bytes % 2 == 0);
+    bytes /= 2;
+    const uint16_t *shorts = (const uint16_t *)ptr;
+
+    uint16_t sum = 0;
+
+    for (size_t i = 0; i < bytes; i++) {
+        sum += shorts[i];
+    }
+    return sum;
+}
+
+static inline void print_sum(FILE *f, const void *ptr, size_t bytes) {
+    fprintf(f, "%d\n", sum_u16(ptr, bytes));
 }

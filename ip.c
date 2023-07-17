@@ -29,22 +29,7 @@ struct msg {
     struct icmp_pack payload;
 };
 
-static inline void print_sum(FILE *f, const void *ptr, size_t bytes) {
-    assert(bytes % 2 == 0);
-    bytes /= 2;
-    const uint16_t *shorts = ptr;
-
-    uint16_t sum = 0;
-
-    for (size_t i = 0; i < bytes; i++) {
-        sum += shorts[i];
-    }
-
-    fprintf(f, "%d\n", sum);
-}
-
-// VERY UNFINISHED
-// Still has a bunch of unnecessary debug printing
+// Doesn't work
 void ping_ip(int sockfd, const char *hostname) {
     struct addrinfo *ai_serv = NULL;
 
@@ -96,24 +81,20 @@ void ping_ip(int sockfd, const char *hostname) {
         inet_ntop(AF_INET, &addr_self->sin_addr, buf, sizeof(buf));
         printf("Own IP address is %s.\n", buf);
 
-        freeifaddrs(ifap);
+        // TODO: Don't leak *ifap
     }
 
     struct icmp_pack payload = make_icmp_echo_pack();
     struct iphdr ip_hdr = {0};
-    // TODO: Remove
-    dump_bytes(stdout, &ip_hdr, sizeof(ip_hdr));
     ip_hdr.ihl = sizeof(struct iphdr) / sizeof(uint32_t);
     ip_hdr.version = 4;
     // RFC 2474 changed the meaning of this field. Unfortunately, I'm not smart
     // or patient enough to understand the whole specification document, so I
     // have no idea what this field actually does now. With that in mind, I'm
     // just going to set this to zero and hope for the best.
-    ip_hdr.tos = 0;
+    ip_hdr.tos = 0x00;
     ip_hdr.tot_len = htons(sizeof(ip_hdr) + sizeof(payload));
-    ip_hdr.id = htons(getpid());
-    // Fragment offset
-    // (first and only fragment)
+    ip_hdr.id = 0;
     ip_hdr.frag_off = 0;
     ip_hdr.ttl = 64;
     ip_hdr.protocol = IPPROTO_ICMP;
@@ -121,25 +102,12 @@ void ping_ip(int sockfd, const char *hostname) {
     ip_hdr.saddr = addr_self->sin_addr.s_addr;
     ip_hdr.daddr = addr_serv->sin_addr.s_addr;
 
-    // TODO: Remove
-    printf("\n\n");
-    dump_bytes(stdout, &ip_hdr, sizeof(ip_hdr));
-
     ip_hdr.check = checksum(&ip_hdr, sizeof(ip_hdr));
-
-    // TODO: Remove
-    printf("\n\n");
-    dump_bytes(stdout, &ip_hdr, sizeof(ip_hdr));
-    // TODO: Remove
-    print_sum(stdout, &ip_hdr, sizeof(ip_hdr));
 
     struct msg msg = {
         .iphdr = ip_hdr,
         .payload = payload,
     };
-
-    // TODO: Remove
-    printf("\n\n");
 
     dump_bytes(stdout, &msg, sizeof(msg));
 
